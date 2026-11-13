@@ -1,10 +1,10 @@
 # gnome51-cursor-fix
 
-Fix cursor icons not changing in **GNOME 51+** when using third-party Xcursor themes.
+This tool fixes cursor icons that do not change in GNOME 51.
 
-## Why this happens
+## 1. Overview
 
-GNOME Shell 51 introduces `StCursor` (`libst`), which loads scalable SVG cursors from `<theme>/cursors_scalable/<cursor>/metadata.json` instead of legacy Xcursor bitmap files (`cursors/`). Third-party cursor themes that only ship `cursors/` fail to load with:
+In GNOME 51, GNOME Shell uses `StCursor` to show cursor icons. `StCursor` reads scalable SVG cursors from the `cursors_scalable/` directory in each theme. Legacy third-party cursor themes only contain Xcursor bitmap files in the `cursors/` directory. Because `cursors_scalable/` is missing, GNOME Shell cannot load the cursor and logs this error:
 
 ```text
 gnome-shell: Could not load cursor 'default': No file found
@@ -12,57 +12,94 @@ gnome-shell: Could not load cursor 'text': No file found
 gnome-shell: Could not load cursor 'pointer': No file found
 ```
 
-Additionally, `libXcursor` defaults to `~/.icons:/usr/share/icons:/usr/share/pixmaps`, so themes installed only in `~/.local/share/icons` are missed if `~/.icons` does not exist.
+In addition, `libXcursor` searches `~/.icons`, `/usr/share/icons`, and `/usr/share/pixmaps` by default. If `~/.icons` does not exist, `libXcursor` does not find themes in `~/.local/share/icons`.
 
-## What this script does
+This tool converts legacy Xcursor files into `cursors_scalable/` directories. It requires only Python 3 standard library modules.
 
-- Zero external dependencies (Python 3 standard library only).
-- Converts legacy Xcursor files (`cursors/`) into GNOME 51 `cursors_scalable/` (`metadata.json` + SVG-wrapped PNGs, preserving animations, hotspots, nominal sizes, and symlinks).
-- Adds `Inherits=Adwaita` to `index.theme` if missing.
-- Creates `~/.icons -> ~/.local/share/icons` if `~/.icons` does not exist.
+## 2. Requirements
 
-## Usage
+- Linux with GNOME 51 or later.
+- Python 3.10 or later.
+- Write access to the target icon directories.
+
+## 3. Installation
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/Antux912012/gnome51-cursor-fix.git
+```
+
+2. Open the project directory:
+
+```bash
+cd gnome51-cursor-fix
+```
+
+3. Make the script executable:
 
 ```bash
 chmod +x gnome51-cursor-fix.py
+```
+
+## 4. Quick Start
+
+1. Run the script for all user cursor themes:
+
+```bash
 ./gnome51-cursor-fix.py
 ```
 
-Log out and back in (or toggle your cursor theme in Settings / GNOME Tweaks) to reload GNOME Shell.
+2. Log out of your GNOME session.
+3. Log in again to reload GNOME Shell.
 
-### Options
+## 5. CLI Options
 
-```text
--d, --icons-dir PATH      Icon directory to scan (repeatable).
-                          Default: ~/.local/share/icons and ~/.icons
-    --system              Also scan /usr/share/icons (run with sudo if needed)
--t, --theme NAME          Only process the named cursor theme (repeatable)
-    --size-strategy STR   Xcursor size to extract: largest (default), smallest, or closest:<px>
-    --add-inherits THEME  Fallback theme for index.theme (default: Adwaita)
-    --no-inherits         Do not modify index.theme
-    --no-symlink-icons    Do not create ~/.icons -> ~/.local/share/icons
--f, --force               Overwrite existing cursors_scalable/ entries
--n, --dry-run             Preview changes without writing files
--v, --verbose             Print per-cursor details
-    --version             Show version
-```
+| Option | Short | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `--icons-dir PATH` | `-d` | `~/.local/share/icons`, `~/.icons` | Scan this icon directory. You can repeat this option. |
+| `--system` | — | Disabled | Also scan `/usr/share/icons`. Run with `sudo` if required. |
+| `--theme NAME` | `-t` | All themes | Process only this theme name. You can repeat this option. |
+| `--size-strategy STR` | — | `largest` | Select Xcursor size: `largest`, `smallest`, or `closest:<px>`. |
+| `--add-inherits THEME` | — | `Adwaita` | Add `Inherits=<THEME>` to `index.theme` when missing. |
+| `--no-inherits` | — | Disabled | Do not change `index.theme` files. |
+| `--no-symlink-icons` | — | Disabled | Do not create the `~/.icons` symlink. |
+| `--force` | `-f` | Disabled | Overwrite existing `cursors_scalable/` entries. |
+| `--dry-run` | `-n` | Disabled | Show planned changes without writing files. |
+| `--verbose` | `-v` | Disabled | Print details for each cursor. |
+| `--version` | — | — | Show the program version and exit. |
+| `--help` | `-h` | — | Show the help message and exit. |
 
-### Examples
+## 6. Examples
 
-Preview changes for a single theme:
+### Preview changes for one theme
 
 ```bash
 ./gnome51-cursor-fix.py --theme Graphite-dark-cursors --dry-run --verbose
 ```
 
-Regenerate all user themes, overwriting existing `cursors_scalable/` directories:
+### Overwrite existing scalable cursors
 
 ```bash
 ./gnome51-cursor-fix.py --force
 ```
 
-Include system-wide themes under `/usr/share/icons`:
+### Convert a theme to a target size
+
+```bash
+./gnome51-cursor-fix.py --size-strategy closest:32 --force
+```
+
+### Convert system-wide themes
 
 ```bash
 sudo ./gnome51-cursor-fix.py --system
 ```
+
+## 7. Detailed Documentation
+
+Read [docs/REFERENCE.md](docs/REFERENCE.md) for full technical details, file formats, and troubleshooting steps.
+
+## 8. License
+
+This project uses the MIT License. Read [LICENSE](LICENSE) for details.

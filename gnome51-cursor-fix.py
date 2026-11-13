@@ -15,6 +15,15 @@ __version__ = "1.0.0"
 XCURSOR_MAGIC = b"Xcur"
 XCURSOR_IMAGE_TYPE = 0xFFFD0002
 
+ASCII_LOGO = r"""
+   |\
+   | \     ___ _  _  ___  __  __ ___   ___ _
+   |  \   / __| \| |/ _ \|  \/  | __| | __| |
+   |   \ | (_ | .` | (_) | |\/| | _|  |__ \ |
+   | |\ \ \___|_|\_|\___/|_|  |_|___| |___/_|
+   |_| \_\   GNOME 51 CURSOR FIX  v1.0.0
+""".strip("\n")
+
 
 def png_chunk(chunk_type: bytes, data: bytes) -> bytes:
     """Build a single PNG chunk with length and CRC32."""
@@ -255,7 +264,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     """Parse CLI arguments."""
     parser = argparse.ArgumentParser(
         prog="gnome51-cursor-fix",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
         description=(
+            f"{ASCII_LOGO}\n\n"
             "Fix cursor icons in GNOME 51 by generating cursors_scalable/ "
             "(SVG + metadata.json) from legacy Xcursor themes."
         ),
@@ -329,6 +340,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     """CLI entry point."""
     args = parse_args(argv)
+    print(ASCII_LOGO)
+    print()
 
     if args.icons_dir is None:
         icons_dirs = [
